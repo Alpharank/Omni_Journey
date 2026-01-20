@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omni Journey</title>
+    <script src="https://cdn.plot.ly/plotly-basic-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --teal: #296f5e;
+            --teal-dark: #1a4a3f;
+            --teal-light: #3a9a84;
+            --mint: #6DB09F;
+            --mint-light: #D1F0E8;
+            --rose: #C5998B;
+            --brown: #703B2A;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --muted: #6b7280;
+            --light: #9ca3af;
+            --border: #e5e7eb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Login Overlay */
+        .login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+        }
+        .login-overlay.hidden { display: none; }
+        .login-box {
+            background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center; max-width: 400px; width: 90%;
+        }
+        .login-box h1 { color: var(--teal); margin-bottom: 8px; font-size: 24px; }
+        .login-box p { color: var(--muted); margin-bottom: 24px; }
+        .login-box .google-btn-container { display: flex; justify-content: center; margin: 20px 0; }
+        .login-box .domain-note {
+            font-size: 12px; color: var(--muted); margin-top: 16px;
+            padding: 12px; background: #f8f9fa; border-radius: 8px;
+        }
+        .error-msg { color: #E07A5F; margin-top: 12px; display: none; }
+
+        /* Loader Screen */
+        .loader-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
+            opacity: 1; transition: opacity 0.5s ease;
+        }
+        .loader-screen.fade-out { opacity: 0; pointer-events: none; }
+        .loader-screen.hidden { display: none; }
+        .loader-brand {
+            height: 50px; margin-bottom: 24px;
+            opacity: 0; animation: fadeInTitle 0.5s ease 0.5s forwards;
+        }
+        .loader-owl {
+            width: 120px; height: 140px;
+            filter: drop-shadow(0 0 4px #296f5e) drop-shadow(0 0 8px #296f5e);
+        }
+        .loader-owl path, .loader-owl circle, .loader-owl ellipse, .loader-owl line {
+            stroke: white; stroke-dasharray: 1000; stroke-dashoffset: 1000;
+            animation: drawOwl 2s ease forwards;
+        }
+        .loader-owl .owl-eye-iris { fill: #296f5e; stroke: none; opacity: 0; animation: fadeIn 0.5s ease 1.5s forwards; }
+        .loader-owl .owl-eye-pupil { fill: #0a1a18; stroke: none; opacity: 0; animation: fadeIn 0.5s ease 1.7s forwards; }
+        @keyframes drawOwl { to { stroke-dashoffset: 0; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes glowPulse {
+            0%, 100% { filter: drop-shadow(0 0 4px #296f5e) drop-shadow(0 0 8px #296f5e); }
+            50% { filter: drop-shadow(0 0 8px #296f5e) drop-shadow(0 0 16px #296f5e); }
+        }
+        .loader-owl.complete { animation: glowPulse 1.5s ease infinite; }
+        .loader-title {
+            color: #296f5e; font-size: 24px; font-weight: 700; margin-top: 24px;
+            text-shadow: 0 1px 2px white; opacity: 0; animation: fadeInTitle 0.5s ease 1.5s forwards;
+        }
+        @keyframes fadeInTitle { to { opacity: 1; } }
+
+        /* Dashboard */
+        .dashboard { display: none; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            margin: 0;
+            padding: 16px;
+            min-width: 320px;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #296f5e 0%, #1a4a3f 100%);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 0 0 20px 20px;
+            margin: -16px -16px 24px -16px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .dashboard-header .subtitle {
+            font-size: 15px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-header .metadata {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        /* Filter Badge */
+        .filter-indicator {
+            background: var(--mint-light);
+            border: 2px solid var(--teal);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--teal);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-badge svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .clear-filter-btn {
+            background: var(--teal);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .clear-filter-btn:hover {
+            background: var(--teal-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(41, 111, 94, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* KPI Section */
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-light) 100%);
+            border-radius: 50px;
+            padding: 20px 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .chart-container {
+            position: relative;
+            min-height: 600px;
+        }
+
+        /* Table Section */
+        .table-section {
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #334155;
+            background: #164e63;
+        }
+
+        .table-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #164e63;
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+            border-bottom: 2px solid #334155;
+        }
+
+        th.text-right {
+            text-align: right;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #334155;
+            transition: background-color 0.15s;
+        }
+
+        tbody tr:hover {
+            background-color: #334155;
+        }
+
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            color: white;
+        }
+
+        td.text-right {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .touchpoints-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .channel-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .channel-icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            margin: 2px;
+        }
+
+        .channel-icon-wrapper svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .touchpoint-separator {
+            color: #94a3b8;
+            font-weight: 300;
+            font-size: 18px;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: white;
+        }
+
+        .channel-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .legend-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend-label {
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+
+            .dashboard-header {
+                padding: 20px 16px;
+                margin: -8px -8px 16px -8px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 22px;
+            }
+
+            .kpi-section {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                min-height: 500px;
+            }
+
+            .table-container {
+                max-height: 400px;
+            }
+
+            th, td {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h1>Omni Journey Dashboard</h1>
+            <p>Sign in with your Alpharank account to access the dashboard</p>
+            <div class="google-btn-container">
+                <div id="g_id_onload"
+                     data-client_id="301502015306-5go1do1pd6opjfbn5mh33sdns2rd59a1.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            <p class="error-msg" id="errorMsg">Access restricted to @alpharank.io accounts only.</p>
+            <p class="domain-note">Only @alpharank.io email addresses are authorized to view this dashboard.</p>
+        </div>
+    </div>
+
+    <!-- Loader Screen -->
+    <div class="loader-screen hidden" id="loaderScreen">
+        <img class="loader-brand" src="icons/alpharank-logo.png" alt="AlphaRank">
+        <svg class="loader-owl" viewBox="0 0 200 240" fill="none">
+            <line x1="0" y1="195" x2="200" y2="195" stroke="white" stroke-width="2.5"/>
+            <path d="M20 195 L8 183" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M20 195 L8 207" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M35 195 L25 186" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M72 195 C68 205 62 212 58 218 C55 222 58 226 64 224 C68 222 70 218 72 212 C74 218 76 222 80 224 C86 226 89 222 86 218 C82 212 78 205 76 195" stroke="white" stroke-width="2.5" fill="none"/>
+            <path d="M124 195 C120 205 114 212 110 218 C107 222 110 226 116 224 C120 222 122 218 124 212 C126 218 128 222 132 224 C138 226 141 222 138 218 C134 212 130 205 128 195" stroke="white" stroke-width="2.5" fill="none"/>
+            <ellipse cx="100" cy="140" rx="52" ry="58" stroke="white" stroke-width="2.5"/>
+            <ellipse cx="100" cy="155" rx="32" ry="38" stroke="white" stroke-width="2"/>
+            <path d="M48 75 C42 60 45 50 50 42 L28 30 C18 26 16 36 26 40 C36 44 48 42 55 40 C65 35 80 32 100 32 C120 32 135 35 145 40 C152 42 164 44 174 40 C184 36 182 26 172 30 L150 42 C155 50 158 60 152 75 C158 95 150 115 135 125 C120 135 80 135 65 125 C50 115 42 95 48 75Z" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="75" cy="78" r="24" stroke="white" stroke-width="2.5"/>
+            <circle class="owl-eye-iris" cx="75" cy="78" r="15"/>
+            <circle class="owl-eye-pupil" cx="75" cy="78" r="8"/>
+            <circle cx="125" cy="78" r="24" stroke="white" stroke-width="2.5"/>
+            <circle class="owl-eye-iris" cx="125" cy="78" r="15"/>
+            <circle class="owl-eye-pupil" cx="125" cy="78" r="8"/>
+            <path d="M94 98 Q100 90 106 98 L100 110 Z" stroke="white" stroke-width="2" fill="none"/>
+        </svg>
+        <div class="loader-title">Night Vision For Your Branch</div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+    <div class="dashboard-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <h1>Omni Journey</h1>
+                <div class="subtitle">Journey Analysis & Channel Performance</div>
+                <div class="metadata" id="dataPeriod">Data Period: December 2024 | Updated: January 2025</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Error Message (hidden by default) -->
+        <div id="errorMessage" class="error-message hidden"></div>
+
+        <!-- Filter Indicator (hidden by default) -->
+        <div id="filterIndicator" class="filter-indicator hidden">
+            <div>
+                <span style="color: var(--muted); font-weight: 600; margin-right: 8px;">Active Filter:</span>
+                <span class="filter-badge">
+                    <span id="filterChannelName"></span>
+                </span>
+            </div>
+            <button class="clear-filter-btn" onclick="clearFilter()">Clear Filter</button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-section">
+            <div class="kpi-card">
+                <div class="kpi-label">Total Applications</div>
+                <div class="kpi-value" id="kpiReceived">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Approved</div>
+                <div class="kpi-value" id="kpiApproved">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Funded</div>
+                <div class="kpi-value" id="kpiFunded">-</div>
+            </div>
+        </div>
+
+        <!-- Search/Filter Control -->
+        <div class="chart-section" style="padding: 16px 24px;">
+            <label for="textFilter" style="display: block; font-weight: 600; color: var(--text); margin-bottom: 8px;">
+                Search Journeys by Channel
+            </label>
+            <input
+                type="text"
+                id="textFilter"
+                placeholder="e.g., Google, Yelp, Facebook..."
+                style="width: 100%; max-width: 400px; padding: 10px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit;"
+            />
+            <div style="color: var(--muted); font-size: 13px; margin-top: 6px;">
+                Filter table to show only journeys containing the specified channel
+            </div>
+        </div>
+
+        <!-- Top 20 Channels Chart -->
+        <div class="chart-section">
+            <div class="chart-title">Top 20 Channels by Application Volume</div>
+            <div id="channelChart" class="chart-container"></div>
+        </div>
+
+        <!-- Marketing Channel Performance -->
+        <div class="chart-section">
+            <div class="chart-title">Marketing Channel Performance</div>
+            <div style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">Application count by touchpoint involvement across customer journeys</div>
+            <div id="marketingChart" class="chart-container" style="height: 400px;"></div>
+        </div>
+
+        <!-- Journey Details Table -->
+        <div class="table-section">
+            <div class="table-header">
+                <div class="table-title">Journey Details <span id="journeyCount" style="font-weight: 400; color: var(--muted);"></span></div>
+            </div>
+            <div class="channel-legend" id="channelLegend"></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Top</th>
+                            <th>Middle</th>
+                            <th>Bottom</th>
+                            <th class="text-right">Received</th>
+                            <th class="text-right">Approved</th>
+                            <th class="text-right">Funded</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div> <!-- End Dashboard -->
+
+    <script>
+        // Auth
+        const AUTHORIZED_DOMAIN = 'alpharank.io';
+        let currentUser = null;
+
+        function handleCredentialResponse(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            if (payload.email.endsWith('@' + AUTHORIZED_DOMAIN)) {
+                currentUser = payload;
+                document.getElementById('loginOverlay').classList.add('hidden');
+
+                // Show loader animation
+                const loader = document.getElementById('loaderScreen');
+                loader.classList.remove('hidden');
+
+                // Start loading data in background
+                loadData();
+
+                // After animation completes, fade out loader and show dashboard
+                setTimeout(() => {
+                    document.querySelector('.loader-owl').classList.add('complete');
+                }, 2000);
+
+                setTimeout(() => {
+                    loader.classList.add('fade-out');
+                    document.getElementById('dashboard').style.display = 'block';
+                }, 3500);
+
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                }, 4000);
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        // Global state
+        let allData = [];
+        let activeFilter = null;
+        let textFilterValue = '';
+
+        // Channel color mapping
+        // Using theme palette colors for all channels
+        const channelColors = {
+            'Google': '#296f5e',        // teal
+            'Google Ads': '#3a9a84',    // teal-light
+            'Meta': '#1a4a3f',          // teal-dark
+            'Facebook': '#1a4a3f',      // teal-dark
+            'Instagram': '#C5998B',     // rose
+            'SSO': '#6DB09F',           // mint
+            'Website': '#703B2A',       // brown
+            'Mobile App': '#296f5e',    // teal
+            'Bing': '#3a9a84',          // teal-light
+            'Yahoo': '#C5998B',         // rose
+            'Email': '#6DB09F',         // mint
+            'Phone': '#703B2A',         // brown
+            'Direct Mail': '#1a4a3f',   // teal-dark
+            'Referral': '#296f5e',      // teal
+            'Yelp': '#C5998B',          // rose
+            'SavvyMoney Web': '#3a9a84', // teal-light
+            'Google My Business': '#6DB09F', // mint
+            'HubSpot': '#C5998B',       // rose
+            'StackAdapt': '#703B2A',    // brown
+            'Ecosia': '#3a9a84',        // teal-light
+            'Organic': '#6DB09F'        // mint
+        };
+
+        // Channel abbreviation mapping
+        const channelAbbrev = {
+            'Google': 'G',
+            'Google Ads': 'GA',
+            'Meta': 'FB',
+            'Facebook': 'FB',
+            'Instagram': 'IG',
+            'SSO': 'SO',
+            'Website': 'WB',
+            'Mobile App': 'MA',
+            'Bing': 'BG',
+            'Yahoo': 'YH',
+            'Email': 'EM',
+            'Phone': 'PH',
+            'Direct Mail': 'DM',
+            'Referral': 'RF',
+            'Yelp': 'YP',
+            'SavvyMoney Web': 'SM',
+            'Google My Business': 'GM',
+            'HubSpot': 'HS',
+            'StackAdapt': 'SA',
+            'Ecosia': 'EC',
+            'Organic': 'OR'
+        };
+
+        // Get color for channel
+        function getChannelColor(channel) {
+            if (channelColors[channel]) {
+                return channelColors[channel];
+            }
+            // Generate a color hash for unknown channels
+            let hash = 0;
+            for (let i = 0; i < channel.length; i++) {
+                hash = channel.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = hash % 360;
+            return `hsl(${hue}, 65%, 50%)`;
+        }
+
+        // Get abbreviation for channel
+        function getChannelAbbrev(channel) {
+            if (channelAbbrev[channel]) {
+                return channelAbbrev[channel];
+            }
+            // Generate 2-letter abbreviation from first 2 letters
+            return channel.substring(0, 2).toUpperCase();
+        }
+
+        // Channel icon mapping using image files
+        function getChannelIcon(channel) {
+            const iconMap = {
+                'Google': 'icons/google.jpg',
+                'Google Ads': 'icons/google_ads.png',
+                'SSO': 'icons/sso.png',
+                'Website': 'icons/website.png',
+                'Mobile App': 'icons/mobile_app.png',
+                'Bing': 'icons/bing.jpg',
+                'Yahoo': 'icons/yahoo.png',
+                'Meta': 'icons/meta.jpg',
+                'SavvyMoney Web': 'icons/savvymoney.jpg',
+                'SavvyMoney': 'icons/savvymoney.jpg',
+                'Google My Business': 'icons/google_my_business.png',
+                'HubSpot': 'icons/hubspot.jpg',
+                'StackAdapt': 'icons/stackadapt.jpg',
+                'Organic': 'icons/organic.png',
+                'Yelp': 'icons/yelp.jpg',
+                'Audacy': 'icons/audacy.jpg',
+                'ChatGPT': 'icons/chatgpt.jpg',
+                'DuckDuckGo': 'icons/duckduckgo.jpg',
+                'Android': 'icons/android.png',
+                'Email': 'icons/email.png',
+                'SBT': 'icons/SBT.png',
+                'Salesforce': 'icons/salesforce.jpg'
+            };
+
+            // Dark icons that need to be inverted to white on dark backgrounds
+            const darkIcons = ['SSO', 'Website', 'Mobile App', 'Organic'];
+            const needsInvert = darkIcons.includes(channel);
+
+            const iconPath = iconMap[channel];
+            if (iconPath) {
+                const filterStyle = needsInvert ? 'filter: invert(1) brightness(2);' : '';
+                return `<img src="${iconPath}" alt="${channel}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; ${filterStyle}">`;
+            } else {
+                // Create a letter badge for unknown channels
+                const letter = channel.charAt(0).toUpperCase();
+                return `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="#6B7280"/>
+                    <text x="12" y="16" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="white" text-anchor="middle">${letter}</text>
+                </svg>`;
+            }
+        }
+
+        let textFilterInitialized = false;
+
+        // Parse CSV and initialize dashboard
+        function loadData() {
+            Papa.parse('data/omni_financial.csv', {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.errors.length > 0) {
+                        showError('Error parsing CSV: ' + results.errors[0].message);
+                        return;
+                    }
+
+                    allData = results.data.map(row => ({
+                        top: row.Top || '',
+                        middle: row.Middle || '',
+                        bottom: row.Bottom || '',
+                        received: parseInt(row.Received) || 0,
+                        approved: parseInt(row.Approved) || 0,
+                        funded: parseInt(row.Funded) || 0
+                    }));
+
+                    // Update metadata display
+                    document.getElementById('dataPeriod').textContent =
+                        'Data Period: December 2025 | Omni Financial';
+
+                    // Text filter event listener (only add once)
+                    if (!textFilterInitialized) {
+                        document.getElementById('textFilter').addEventListener('input', function(e) {
+                            textFilterValue = e.target.value;
+                            renderDashboard();
+
+                            // Update filter indicator if text filter is active
+                            if (textFilterValue && !activeFilter) {
+                                document.getElementById('filterIndicator').classList.remove('hidden');
+                                document.getElementById('filterChannelName').textContent = textFilterValue;
+                            } else if (!textFilterValue && !activeFilter) {
+                                document.getElementById('filterIndicator').classList.add('hidden');
+                            }
+                        });
+                        textFilterInitialized = true;
+                    }
+
+                    hideLoading();
+                    renderDashboard();
+                },
+                error: function(error) {
+                    showError('Failed to load ' + dataset.file + ': ' + error.message);
+                }
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            hideLoading();
+        }
+
+        function hideLoading() {
+            // Loader is handled by auth flow
+        }
+
+        function getFilteredData() {
+            if (!activeFilter && !textFilterValue) {
+                return allData;
+            }
+
+            return allData.filter(row => {
+                const channels = [row.top];
+                if (row.middle) {
+                    channels.push(...row.middle.split('>').map(c => c.trim()));
+                }
+                if (row.bottom) {
+                    channels.push(row.bottom);
+                }
+
+                let matchesClickFilter = true;
+                let matchesTextFilter = true;
+
+                // Check click filter (exact match)
+                if (activeFilter) {
+                    matchesClickFilter = channels.includes(activeFilter);
+                }
+
+                // Check text filter (case-insensitive, exact match to avoid Google/Google Ads confusion)
+                if (textFilterValue) {
+                    const searchTerm = textFilterValue.trim();
+                    matchesTextFilter = channels.some(channel =>
+                        channel.toLowerCase() === searchTerm.toLowerCase()
+                    );
+                }
+
+                return matchesClickFilter && matchesTextFilter;
+            });
+        }
+
+        function renderDashboard() {
+            updateKPIs();
+            renderChannelChart();
+            renderMarketingChannelChart();
+            renderLegend();
+            renderTable();
+        }
+
+        function updateKPIs() {
+            const data = getFilteredData();
+            const totalReceived = data.reduce((sum, row) => sum + row.received, 0);
+            const totalApproved = data.reduce((sum, row) => sum + row.approved, 0);
+            const totalFunded = data.reduce((sum, row) => sum + row.funded, 0);
+
+            document.getElementById('kpiReceived').textContent = totalReceived.toLocaleString();
+            document.getElementById('kpiApproved').textContent = totalApproved.toLocaleString();
+            document.getElementById('kpiFunded').textContent = totalFunded.toLocaleString();
+        }
+
+        function normalizeChannelName(channel) {
+            const channelMap = {
+                'Meta': 'Facebook',
+                'Facebook': 'Facebook',
+                'Instagram': 'Facebook',
+                'IG': 'Facebook',
+                'FB': 'Facebook',
+                'Google Ads': 'Google Ads',
+                'GA': 'Google Ads',
+                'Google': 'Google',
+                'G': 'Google',
+                'Website': 'Website',
+                'W': 'Website',
+                'WB': 'Website',
+                'Yelp': 'Yelp',
+                'Y': 'Yelp',
+                'YP': 'Yelp',
+                'Phone': 'Phone',
+                'PH': 'Phone',
+                'Email': 'Email',
+                'EM': 'Email',
+                'Direct Mail': 'Direct Mail',
+                'DM': 'Direct Mail',
+                'Referral': 'Referral',
+                'RF': 'Referral',
+                'Organic': 'Referral',
+                'Or': 'Referral',
+                'OR': 'Referral'
+            };
+
+            return channelMap[channel] || channel;
+        }
+
+        function renderMarketingChannelChart() {
+            // Dynamically calculate channel counts from data
+            const channelCounts = {};
+            const data = getFilteredData();
+
+            data.forEach(row => {
+                const channels = new Set();
+
+                if (row.top) channels.add(row.top);
+                if (row.middle) {
+                    row.middle.split('>').map(c => c.trim()).filter(c => c).forEach(c => channels.add(c));
+                }
+                if (row.bottom) channels.add(row.bottom);
+
+                channels.forEach(channel => {
+                    channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+                });
+            });
+
+            // Convert to array and sort by count descending
+            const channelData = Object.entries(channelCounts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 15); // Top 15 channels
+
+            const targetChannels = channelData.map(d => d.name);
+            const counts = channelData.map(d => d.count);
+
+            // Theme palette colors (rotating)
+            const colorPalette = [
+                '#296f5e', '#1a4a3f', '#3a9a84', '#6DB09F', '#C5998B',
+                '#703B2A', '#4285F4', '#34A853', '#EA4335', '#FBBC05',
+                '#0082FB', '#D32323', '#FF7A59', '#6001D2', '#10A37F'
+            ];
+            const colors = targetChannels.map((_, i) => colorPalette[i % colorPalette.length]);
+
+            const trace = {
+                type: 'bar',
+                x: counts,
+                y: targetChannels,
+                orientation: 'h',
+                marker: {
+                    color: colors,
+                    line: {
+                        color: '#ffffff',
+                        width: 1
+                    }
+                },
+                text: counts.map(c => c.toLocaleString()),
+                textposition: 'outside',
+                textfont: {
+                    size: 12,
+                    color: '#ffffff',
+                    family: 'Inter, sans-serif',
+                    weight: 600
+                },
+                hovertemplate: '<b>%{y}</b><br>Applications: %{x:,}<extra></extra>'
+            };
+
+            // Dynamic height based on number of channels (30px per bar + margins)
+            const chartHeight = Math.max(300, channelData.length * 30 + 70);
+
+            const layout = {
+                margin: { l: 120, r: 50, t: 10, b: 40 },
+                height: chartHeight,
+                font: {
+                    family: 'Inter, sans-serif',
+                    size: 13,
+                    color: '#ffffff'
+                },
+                xaxis: {
+                    title: {
+                        text: '',
+                        font: { size: 14, weight: 600, color: '#ffffff' }
+                    },
+                    gridcolor: '#334155',
+                    showgrid: true,
+                    zeroline: false,
+                    color: '#ffffff'
+                },
+                yaxis: {
+                    automargin: true,
+                    tickfont: { size: 13, weight: 500, color: '#ffffff' },
+                    showgrid: false,
+                    autorange: 'reversed'
+                },
+                paper_bgcolor: '#1e293b',
+                plot_bgcolor: '#1e293b',
+                hovermode: 'closest'
+            };
+
+            const config = {
+                displayModeBar: false,
+                responsive: true
+            };
+
+            Plotly.newPlot('marketingChart', [trace], layout, config);
+
+            // Add click event for filtering
+            document.getElementById('marketingChart').on('plotly_click', function(data) {
+                const channelName = data.points[0].y;
+                setFilter(channelName);
+            });
+        }
+
+        function renderChannelChart() {
+            // Count applications per channel
+            const channelCounts = {};
+
+            allData.forEach(row => {
+                const channels = [row.top];
+                if (row.middle) {
+                    channels.push(...row.middle.split('>').map(c => c.trim()));
+                }
+                if (row.bottom) {
+                    channels.push(row.bottom);
+                }
+
+                channels.forEach(channel => {
+                    if (channel) {
+                        channelCounts[channel] = (channelCounts[channel] || 0) + row.received;
+                    }
+                });
+            });
+
+            // Sort and get top 20
+            const sortedChannels = Object.entries(channelCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20);
+
+            const channels = sortedChannels.map(([name]) => name);
+            const counts = sortedChannels.map(([, count]) => count);
+
+            // Create gradient colors
+            const colors = channels.map((_, i) => {
+                const ratio = i / (channels.length - 1);
+                const r1 = 109, g1 = 176, b1 = 159; // #6DB09F
+                const r2 = 41, g2 = 111, b2 = 94;   // #296f5e
+                const r = Math.round(r1 + (r2 - r1) * ratio);
+                const g = Math.round(g1 + (g2 - g1) * ratio);
+                const b = Math.round(b1 + (b2 - b1) * ratio);
+                return `rgb(${r}, ${g}, ${b})`;
+            });
+
+            const trace = {
+                type: 'bar',
+                x: counts,
+                y: channels,
+                orientation: 'h',
+                marker: {
+                    color: colors,
+                    line: {
+                        color: '#296f5e',
+                        width: 1
+                    }
+                },
+                text: counts.map(c => c.toLocaleString()),
+                textposition: 'outside',
+                textfont: {
+                    size: 12,
+                    color: '#1a1a2e',
+                    family: 'Inter, sans-serif',
+                    weight: 600
+                },
+                hovertemplate: '<b>%{y}</b><br>Applications: %{x:,}<extra></extra>'
+            };
+
+            const layout = {
+                margin: { l: 150, r: 80, t: 20, b: 60 },
+                height: 600,
+                font: {
+                    family: 'Inter, sans-serif',
+                    size: 13,
+                    color: '#1a1a2e'
+                },
+                xaxis: {
+                    title: {
+                        text: 'Total Applications Received',
+                        font: { size: 14, weight: 600, color: '#296f5e' }
+                    },
+                    gridcolor: '#e5e7eb',
+                    showgrid: true,
+                    zeroline: false
+                },
+                yaxis: {
+                    automargin: true,
+                    tickfont: { size: 13, weight: 500 },
+                    showgrid: false
+                },
+                paper_bgcolor: 'white',
+                plot_bgcolor: 'white',
+                hovermode: 'closest'
+            };
+
+            const config = {
+                displayModeBar: false,
+                responsive: true
+            };
+
+            Plotly.newPlot('channelChart', [trace], layout, config);
+
+            // Add click event for filtering
+            document.getElementById('channelChart').on('plotly_click', function(data) {
+                const channelName = data.points[0].y;
+                setFilter(channelName);
+            });
+        }
+
+        function renderTable() {
+            const filteredData = getFilteredData();
+            document.getElementById('journeyCount').textContent = `(${filteredData.length} ${filteredData.length === 1 ? 'journey' : 'journeys'})`;
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+
+                // Top channel
+                const topCell = document.createElement('td');
+                if (row.top) {
+                    const iconWrapper = document.createElement('div');
+                    iconWrapper.className = 'channel-icon-wrapper';
+                    iconWrapper.innerHTML = getChannelIcon(row.top);
+                    iconWrapper.title = row.top;
+                    topCell.appendChild(iconWrapper);
+                }
+                tr.appendChild(topCell);
+
+                // Middle channels
+                const middleCell = document.createElement('td');
+                const middleDiv = document.createElement('div');
+                middleDiv.className = 'touchpoints-cell';
+
+                if (row.middle) {
+                    const middleChannels = row.middle.split('>').map(c => c.trim()).filter(c => c);
+                    middleChannels.forEach((channel, idx) => {
+                        const iconWrapper = document.createElement('div');
+                        iconWrapper.className = 'channel-icon-wrapper';
+                        iconWrapper.innerHTML = getChannelIcon(channel);
+                        iconWrapper.title = channel;
+                        middleDiv.appendChild(iconWrapper);
+
+                        if (idx < middleChannels.length - 1) {
+                            const separator = document.createElement('span');
+                            separator.className = 'touchpoint-separator';
+                            separator.textContent = '›';
+                            middleDiv.appendChild(separator);
+                        }
+                    });
+                }
+                middleCell.appendChild(middleDiv);
+                tr.appendChild(middleCell);
+
+                // Bottom channel
+                const bottomCell = document.createElement('td');
+                if (row.bottom) {
+                    const iconWrapper = document.createElement('div');
+                    iconWrapper.className = 'channel-icon-wrapper';
+                    iconWrapper.innerHTML = getChannelIcon(row.bottom);
+                    iconWrapper.title = row.bottom;
+                    bottomCell.appendChild(iconWrapper);
+                }
+                tr.appendChild(bottomCell);
+
+                // Metrics
+                const receivedCell = document.createElement('td');
+                receivedCell.className = 'text-right';
+                receivedCell.innerHTML = `<span class="metric-value">${row.received.toLocaleString()}</span>`;
+                tr.appendChild(receivedCell);
+
+                const approvedCell = document.createElement('td');
+                approvedCell.className = 'text-right';
+                approvedCell.innerHTML = `<span class="metric-value">${row.approved.toLocaleString()}</span>`;
+                tr.appendChild(approvedCell);
+
+                const fundedCell = document.createElement('td');
+                fundedCell.className = 'text-right';
+                fundedCell.innerHTML = `<span class="metric-value">${row.funded.toLocaleString()}</span>`;
+                tr.appendChild(fundedCell);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderLegend() {
+            // Dynamically get unique channels from current data
+            const channelSet = new Set();
+            allData.forEach(row => {
+                if (row.top) channelSet.add(row.top);
+                if (row.middle) {
+                    row.middle.split('>').map(c => c.trim()).filter(c => c).forEach(c => channelSet.add(c));
+                }
+                if (row.bottom) channelSet.add(row.bottom);
+            });
+
+            const channels = Array.from(channelSet).sort();
+            const legendContainer = document.getElementById('channelLegend');
+            legendContainer.innerHTML = '';
+
+            channels.forEach(channel => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'legend-icon';
+                iconDiv.innerHTML = getChannelIcon(channel);
+
+                const label = document.createElement('span');
+                label.className = 'legend-label';
+                label.textContent = channel;
+
+                item.appendChild(iconDiv);
+                item.appendChild(label);
+                legendContainer.appendChild(item);
+            });
+        }
+
+        function setFilter(channelName) {
+            activeFilter = channelName;
+            document.getElementById('filterChannelName').textContent = channelName;
+            document.getElementById('filterIndicator').classList.remove('hidden');
+            renderDashboard();
+        }
+
+        function clearFilter() {
+            activeFilter = null;
+            textFilterValue = '';
+            document.getElementById('textFilter').value = '';
+            document.getElementById('filterIndicator').classList.add('hidden');
+            renderDashboard();
+        }
+
+        // No auto-load - wait for authentication
+    </script>
+</body>
+</html>
