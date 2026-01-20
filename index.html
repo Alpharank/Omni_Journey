@@ -778,8 +778,9 @@
                 });
             });
 
-            // Sort and get top 20
+            // Sort and get top 20 (filter out empty channel names)
             const sortedChannels = Object.entries(channelCounts)
+                .filter(([name]) => name && name.trim())
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 20);
 
