@@ -764,13 +764,12 @@
             const channelCounts = {};
 
             allData.forEach(row => {
-                const channels = [row.top];
+                const channels = [];
+                if (row.top && row.top.trim()) channels.push(row.top.trim());
                 if (row.middle) {
-                    channels.push(...row.middle.split('>').map(c => c.trim()));
+                    channels.push(...row.middle.split('>').map(c => c.trim()).filter(c => c));
                 }
-                if (row.bottom) {
-                    channels.push(row.bottom);
-                }
+                if (row.bottom && row.bottom.trim()) channels.push(row.bottom.trim());
 
                 channels.forEach(channel => {
                     if (channel) {
