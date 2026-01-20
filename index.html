@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
 
         :root {
             --teal: #296f5e;
@@ -80,7 +80,9 @@
         }
         .loader-owl.complete { animation: glowPulse 1.5s ease infinite; }
         .loader-title {
-            color: #296f5e; font-size: 24px; font-weight: 700; margin-top: 24px;
+            font-family: 'Montserrat', sans-serif;
+            color: #296f5e; font-size: 24px; font-weight: 600; margin-top: 24px;
+            letter-spacing: 1px;
             text-shadow: 0 1px 2px white; opacity: 0; animation: fadeInTitle 0.5s ease 1.5s forwards;
         }
         @keyframes fadeInTitle { to { opacity: 1; } }
@@ -245,29 +247,73 @@
             margin-bottom: 16px;
         }
 
+        .chart-with-icons {
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .channel-icons-column {
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
+            padding-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .channel-icon-row {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .channel-icon-row img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .channel-icon-row svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .channel-icon-row .channel-label {
+            font-size: 13px;
+            color: #1a1a2e;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         .chart-container {
             position: relative;
-            min-height: 600px;
+            flex: 1;
+            min-width: 0;
+            width: 100%;
         }
 
         /* Table Section */
         .table-section {
-            background: #1e293b;
+            background: white;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid var(--border);
         }
 
         .table-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #334155;
-            background: #164e63;
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
         }
 
         .table-title {
             font-size: 18px;
             font-weight: 600;
-            color: white;
+            color: var(--text);
         }
 
         .table-container {
@@ -283,7 +329,7 @@
         thead {
             position: sticky;
             top: 0;
-            background: #164e63;
+            background: #f1f5f9;
             z-index: 10;
         }
 
@@ -294,8 +340,8 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: white;
-            border-bottom: 2px solid #334155;
+            color: var(--muted);
+            border-bottom: 2px solid var(--border);
         }
 
         th.text-right {
@@ -303,18 +349,18 @@
         }
 
         tbody tr {
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid var(--border);
             transition: background-color 0.15s;
         }
 
         tbody tr:hover {
-            background-color: #334155;
+            background-color: #f8fafc;
         }
 
         td {
             padding: 14px 16px;
             font-size: 14px;
-            color: white;
+            color: var(--text);
         }
 
         td.text-right {
@@ -364,43 +410,7 @@
 
         .metric-value {
             font-weight: 600;
-            color: white;
-        }
-
-        .channel-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px 20px;
-            padding: 16px 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            color: #475569;
-        }
-
-        .legend-icon {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .legend-icon svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .legend-label {
-            font-weight: 500;
+            color: var(--text);
         }
 
         /* Responsive Design */
@@ -420,10 +430,6 @@
 
             .kpi-section {
                 grid-template-columns: 1fr;
-            }
-
-            .chart-container {
-                min-height: 500px;
             }
 
             .table-container {
@@ -551,14 +557,10 @@
         <!-- Top 20 Channels Chart -->
         <div class="chart-section">
             <div class="chart-title">Top 20 Channels by Application Volume</div>
-            <div id="channelChart" class="chart-container"></div>
-        </div>
-
-        <!-- Marketing Channel Performance -->
-        <div class="chart-section">
-            <div class="chart-title">Marketing Channel Performance</div>
-            <div style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">Application count by touchpoint involvement across customer journeys</div>
-            <div id="marketingChart" class="chart-container" style="height: 400px;"></div>
+            <div class="chart-with-icons">
+                <div id="channelIcons" class="channel-icons-column"></div>
+                <div id="channelChart" class="chart-container"></div>
+            </div>
         </div>
 
         <!-- Journey Details Table -->
@@ -566,7 +568,6 @@
             <div class="table-header">
                 <div class="table-title">Journey Details <span id="journeyCount" style="font-weight: 400; color: var(--muted);"></span></div>
             </div>
-            <div class="channel-legend" id="channelLegend"></div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -704,7 +705,7 @@
         }
 
         // Channel icon mapping using image files
-        function getChannelIcon(channel) {
+        function getChannelIcon(channel, darkBackground = false) {
             const iconMap = {
                 'Google': 'icons/google.jpg',
                 'Google Ads': 'icons/google_ads.png',
@@ -727,12 +728,13 @@
                 'Android': 'icons/android.png',
                 'Email': 'icons/email.png',
                 'SBT': 'icons/SBT.png',
-                'Salesforce': 'icons/salesforce.jpg'
+                'Salesforce': 'icons/salesforce.jpg',
+                'LinkedIn': 'icons/linkedin.png'
             };
 
             // Dark icons that need to be inverted to white on dark backgrounds
             const darkIcons = ['SSO', 'Website', 'Mobile App', 'Organic'];
-            const needsInvert = darkIcons.includes(channel);
+            const needsInvert = darkBackground && darkIcons.includes(channel);
 
             const iconPath = iconMap[channel];
             if (iconPath) {
@@ -849,8 +851,6 @@
         function renderDashboard() {
             updateKPIs();
             renderChannelChart();
-            renderMarketingChannelChart();
-            renderLegend();
             renderTable();
         }
 
@@ -898,111 +898,6 @@
             return channelMap[channel] || channel;
         }
 
-        function renderMarketingChannelChart() {
-            // Dynamically calculate channel counts from data
-            const channelCounts = {};
-            const data = getFilteredData();
-
-            data.forEach(row => {
-                const channels = new Set();
-
-                if (row.top) channels.add(row.top);
-                if (row.middle) {
-                    row.middle.split('>').map(c => c.trim()).filter(c => c).forEach(c => channels.add(c));
-                }
-                if (row.bottom) channels.add(row.bottom);
-
-                channels.forEach(channel => {
-                    channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-                });
-            });
-
-            // Convert to array and sort by count descending
-            const channelData = Object.entries(channelCounts)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 15); // Top 15 channels
-
-            const targetChannels = channelData.map(d => d.name);
-            const counts = channelData.map(d => d.count);
-
-            // Theme palette colors (rotating)
-            const colorPalette = [
-                '#296f5e', '#1a4a3f', '#3a9a84', '#6DB09F', '#C5998B',
-                '#703B2A', '#4285F4', '#34A853', '#EA4335', '#FBBC05',
-                '#0082FB', '#D32323', '#FF7A59', '#6001D2', '#10A37F'
-            ];
-            const colors = targetChannels.map((_, i) => colorPalette[i % colorPalette.length]);
-
-            const trace = {
-                type: 'bar',
-                x: counts,
-                y: targetChannels,
-                orientation: 'h',
-                marker: {
-                    color: colors,
-                    line: {
-                        color: '#ffffff',
-                        width: 1
-                    }
-                },
-                text: counts.map(c => c.toLocaleString()),
-                textposition: 'outside',
-                textfont: {
-                    size: 12,
-                    color: '#ffffff',
-                    family: 'Inter, sans-serif',
-                    weight: 600
-                },
-                hovertemplate: '<b>%{y}</b><br>Applications: %{x:,}<extra></extra>'
-            };
-
-            // Dynamic height based on number of channels (30px per bar + margins)
-            const chartHeight = Math.max(300, channelData.length * 30 + 70);
-
-            const layout = {
-                margin: { l: 120, r: 50, t: 10, b: 40 },
-                height: chartHeight,
-                font: {
-                    family: 'Inter, sans-serif',
-                    size: 13,
-                    color: '#ffffff'
-                },
-                xaxis: {
-                    title: {
-                        text: '',
-                        font: { size: 14, weight: 600, color: '#ffffff' }
-                    },
-                    gridcolor: '#334155',
-                    showgrid: true,
-                    zeroline: false,
-                    color: '#ffffff'
-                },
-                yaxis: {
-                    automargin: true,
-                    tickfont: { size: 13, weight: 500, color: '#ffffff' },
-                    showgrid: false,
-                    autorange: 'reversed'
-                },
-                paper_bgcolor: '#1e293b',
-                plot_bgcolor: '#1e293b',
-                hovermode: 'closest'
-            };
-
-            const config = {
-                displayModeBar: false,
-                responsive: true
-            };
-
-            Plotly.newPlot('marketingChart', [trace], layout, config);
-
-            // Add click event for filtering
-            document.getElementById('marketingChart').on('plotly_click', function(data) {
-                const channelName = data.points[0].y;
-                setFilter(channelName);
-            });
-        }
-
         function renderChannelChart() {
             // Count applications per channel
             const channelCounts = {};
@@ -1031,6 +926,21 @@
             const channels = sortedChannels.map(([name]) => name);
             const counts = sortedChannels.map(([, count]) => count);
 
+            // Render icons column
+            const iconsContainer = document.getElementById('channelIcons');
+            iconsContainer.innerHTML = '';
+            channels.forEach(channel => {
+                const row = document.createElement('div');
+                row.className = 'channel-icon-row';
+                row.innerHTML = `
+                    <span class="channel-label">${channel}</span>
+                    <div style="width: 28px; height: 28px;">${getChannelIcon(channel)}</div>
+                `;
+                row.style.cursor = 'pointer';
+                row.onclick = () => setFilter(channel);
+                iconsContainer.appendChild(row);
+            });
+
             // Create gradient colors
             const colors = channels.map((_, i) => {
                 const ratio = i / (channels.length - 1);
@@ -1041,6 +951,10 @@
                 const b = Math.round(b1 + (b2 - b1) * ratio);
                 return `rgb(${r}, ${g}, ${b})`;
             });
+
+            // Dynamic height based on number of channels
+            const barHeight = 32;
+            const chartHeight = channels.length * barHeight + 80;
 
             const trace = {
                 type: 'bar',
@@ -1066,8 +980,9 @@
             };
 
             const layout = {
-                margin: { l: 150, r: 80, t: 20, b: 60 },
-                height: 600,
+                autosize: true,
+                margin: { l: 10, r: 40, t: 10, b: 40 },
+                height: chartHeight,
                 font: {
                     family: 'Inter, sans-serif',
                     size: 13,
@@ -1080,16 +995,18 @@
                     },
                     gridcolor: '#e5e7eb',
                     showgrid: true,
-                    zeroline: false
+                    zeroline: false,
+                    automargin: true
                 },
                 yaxis: {
-                    automargin: true,
-                    tickfont: { size: 13, weight: 500 },
-                    showgrid: false
+                    showticklabels: false,
+                    showgrid: false,
+                    autorange: 'reversed'
                 },
                 paper_bgcolor: 'white',
                 plot_bgcolor: 'white',
-                hovermode: 'closest'
+                hovermode: 'closest',
+                bargap: 0.3
             };
 
             const config = {
@@ -1121,7 +1038,7 @@
                 if (row.top) {
                     const iconWrapper = document.createElement('div');
                     iconWrapper.className = 'channel-icon-wrapper';
-                    iconWrapper.innerHTML = getChannelIcon(row.top);
+                    iconWrapper.innerHTML = getChannelIcon(row.top, false);
                     iconWrapper.title = row.top;
                     topCell.appendChild(iconWrapper);
                 }
@@ -1137,7 +1054,7 @@
                     middleChannels.forEach((channel, idx) => {
                         const iconWrapper = document.createElement('div');
                         iconWrapper.className = 'channel-icon-wrapper';
-                        iconWrapper.innerHTML = getChannelIcon(channel);
+                        iconWrapper.innerHTML = getChannelIcon(channel, false);
                         iconWrapper.title = channel;
                         middleDiv.appendChild(iconWrapper);
 
@@ -1157,7 +1074,7 @@
                 if (row.bottom) {
                     const iconWrapper = document.createElement('div');
                     iconWrapper.className = 'channel-icon-wrapper';
-                    iconWrapper.innerHTML = getChannelIcon(row.bottom);
+                    iconWrapper.innerHTML = getChannelIcon(row.bottom, false);
                     iconWrapper.title = row.bottom;
                     bottomCell.appendChild(iconWrapper);
                 }
@@ -1180,39 +1097,6 @@
                 tr.appendChild(fundedCell);
 
                 tbody.appendChild(tr);
-            });
-        }
-
-        function renderLegend() {
-            // Dynamically get unique channels from current data
-            const channelSet = new Set();
-            allData.forEach(row => {
-                if (row.top) channelSet.add(row.top);
-                if (row.middle) {
-                    row.middle.split('>').map(c => c.trim()).filter(c => c).forEach(c => channelSet.add(c));
-                }
-                if (row.bottom) channelSet.add(row.bottom);
-            });
-
-            const channels = Array.from(channelSet).sort();
-            const legendContainer = document.getElementById('channelLegend');
-            legendContainer.innerHTML = '';
-
-            channels.forEach(channel => {
-                const item = document.createElement('div');
-                item.className = 'legend-item';
-
-                const iconDiv = document.createElement('div');
-                iconDiv.className = 'legend-icon';
-                iconDiv.innerHTML = getChannelIcon(channel);
-
-                const label = document.createElement('span');
-                label.className = 'legend-label';
-                label.textContent = channel;
-
-                item.appendChild(iconDiv);
-                item.appendChild(label);
-                legendContainer.appendChild(item);
             });
         }
 
