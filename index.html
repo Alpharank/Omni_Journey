@@ -779,16 +779,18 @@
             });
 
             // Remove any empty keys from channelCounts
-            delete channelCounts[''];
-            delete channelCounts[' '];
+            Object.keys(channelCounts).forEach(key => {
+                if (!key || !key.trim() || key.trim().length === 0) {
+                    delete channelCounts[key];
+                }
+            });
 
-            // Sort and get top 20 (filter out empty channel names)
+            // Sort and get top 20
             const sortedChannels = Object.entries(channelCounts)
-                .filter(([name]) => name && name.trim() && name.trim().length > 0)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 20);
 
-            const channels = sortedChannels.map(([name]) => name).filter(n => n && n.trim());
+            const channels = sortedChannels.map(([name]) => name);
             const counts = sortedChannels.map(([, count]) => count);
 
             // Render icons column
