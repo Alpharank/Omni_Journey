@@ -6,7 +6,6 @@
     <title>Omni Journey</title>
     <script src="https://cdn.plot.ly/plotly-basic-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
 
@@ -28,67 +27,8 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* Login Overlay */
-        .login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
-            z-index: 10000; display: flex; align-items: center; justify-content: center;
-        }
-        .login-overlay.hidden { display: none; }
-        .login-box {
-            background: white; padding: 40px; border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center; max-width: 400px; width: 90%;
-        }
-        .login-box h1 { color: var(--teal); margin-bottom: 8px; font-size: 24px; }
-        .login-box p { color: var(--muted); margin-bottom: 24px; }
-        .login-box .google-btn-container { display: flex; justify-content: center; margin: 20px 0; }
-        .login-box .domain-note {
-            font-size: 12px; color: var(--muted); margin-top: 16px;
-            padding: 12px; background: #f8f9fa; border-radius: 8px;
-        }
-        .error-msg { color: #E07A5F; margin-top: 12px; display: none; }
-
-        /* Loader Screen */
-        .loader-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 9999;
-            opacity: 1; transition: opacity 0.5s ease;
-        }
-        .loader-screen.fade-out { opacity: 0; pointer-events: none; }
-        .loader-screen.hidden { display: none; }
-        .loader-brand {
-            height: 50px; margin-bottom: 24px;
-            opacity: 0; animation: fadeInTitle 0.5s ease 0.5s forwards;
-        }
-        .loader-owl {
-            width: 120px; height: 140px;
-            filter: drop-shadow(0 0 4px #296f5e) drop-shadow(0 0 8px #296f5e);
-        }
-        .loader-owl path, .loader-owl circle, .loader-owl ellipse, .loader-owl line {
-            stroke: white; stroke-dasharray: 1000; stroke-dashoffset: 1000;
-            animation: drawOwl 2s ease forwards;
-        }
-        .loader-owl .owl-eye-iris { fill: #296f5e; stroke: none; opacity: 0; animation: fadeIn 0.5s ease 1.5s forwards; }
-        .loader-owl .owl-eye-pupil { fill: #0a1a18; stroke: none; opacity: 0; animation: fadeIn 0.5s ease 1.7s forwards; }
-        @keyframes drawOwl { to { stroke-dashoffset: 0; } }
-        @keyframes fadeIn { to { opacity: 1; } }
-        @keyframes glowPulse {
-            0%, 100% { filter: drop-shadow(0 0 4px #296f5e) drop-shadow(0 0 8px #296f5e); }
-            50% { filter: drop-shadow(0 0 8px #296f5e) drop-shadow(0 0 16px #296f5e); }
-        }
-        .loader-owl.complete { animation: glowPulse 1.5s ease infinite; }
-        .loader-title {
-            font-family: 'Montserrat', sans-serif;
-            color: #296f5e; font-size: 24px; font-weight: 600; margin-top: 24px;
-            letter-spacing: 1px;
-            text-shadow: 0 1px 2px white; opacity: 0; animation: fadeInTitle 0.5s ease 1.5s forwards;
-        }
-        @keyframes fadeInTitle { to { opacity: 1; } }
-
         /* Dashboard */
-        .dashboard { display: none; }
+        .dashboard { display: block; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -103,26 +43,14 @@
         .dashboard-header {
             background: linear-gradient(135deg, #296f5e 0%, #1a4a3f 100%);
             color: white;
-            padding: 24px 32px;
+            padding: 16px 32px;
             border-radius: 0 0 20px 20px;
             margin: -16px -16px 24px -16px;
         }
 
-        .dashboard-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .dashboard-header .subtitle {
-            font-size: 15px;
-            opacity: 0.9;
-            margin-bottom: 10px;
-        }
-
         .dashboard-header .metadata {
             font-size: 13px;
-            opacity: 0.8;
+            opacity: 0.9;
         }
 
         .container {
@@ -424,10 +352,6 @@
                 margin: -8px -8px 16px -8px;
             }
 
-            .dashboard-header h1 {
-                font-size: 22px;
-            }
-
             .kpi-section {
                 grid-template-columns: 1fr;
             }
@@ -444,65 +368,12 @@
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-box">
-            <h1>Omni Journey Dashboard</h1>
-            <p>Sign in with your Alpharank account to access the dashboard</p>
-            <div class="google-btn-container">
-                <div id="g_id_onload"
-                     data-client_id="301502015306-5go1do1pd6opjfbn5mh33sdns2rd59a1.apps.googleusercontent.com"
-                     data-context="signin"
-                     data-ux_mode="popup"
-                     data-callback="handleCredentialResponse"
-                     data-auto_prompt="false">
-                </div>
-                <div class="g_id_signin"
-                     data-type="standard"
-                     data-shape="rectangular"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left">
-                </div>
-            </div>
-            <p class="error-msg" id="errorMsg">Access restricted to @alpharank.io accounts only.</p>
-            <p class="domain-note">Only @alpharank.io email addresses are authorized to view this dashboard.</p>
-        </div>
-    </div>
-
-    <!-- Loader Screen -->
-    <div class="loader-screen hidden" id="loaderScreen">
-        <img class="loader-brand" src="icons/alpharank-logo.png" alt="AlphaRank">
-        <svg class="loader-owl" viewBox="0 0 200 240" fill="none">
-            <line x1="0" y1="195" x2="200" y2="195" stroke="white" stroke-width="2.5"/>
-            <path d="M20 195 L8 183" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M20 195 L8 207" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M35 195 L25 186" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M72 195 C68 205 62 212 58 218 C55 222 58 226 64 224 C68 222 70 218 72 212 C74 218 76 222 80 224 C86 226 89 222 86 218 C82 212 78 205 76 195" stroke="white" stroke-width="2.5" fill="none"/>
-            <path d="M124 195 C120 205 114 212 110 218 C107 222 110 226 116 224 C120 222 122 218 124 212 C126 218 128 222 132 224 C138 226 141 222 138 218 C134 212 130 205 128 195" stroke="white" stroke-width="2.5" fill="none"/>
-            <ellipse cx="100" cy="140" rx="52" ry="58" stroke="white" stroke-width="2.5"/>
-            <ellipse cx="100" cy="155" rx="32" ry="38" stroke="white" stroke-width="2"/>
-            <path d="M48 75 C42 60 45 50 50 42 L28 30 C18 26 16 36 26 40 C36 44 48 42 55 40 C65 35 80 32 100 32 C120 32 135 35 145 40 C152 42 164 44 174 40 C184 36 182 26 172 30 L150 42 C155 50 158 60 152 75 C158 95 150 115 135 125 C120 135 80 135 65 125 C50 115 42 95 48 75Z" stroke="white" stroke-width="2.5" fill="none"/>
-            <circle cx="75" cy="78" r="24" stroke="white" stroke-width="2.5"/>
-            <circle class="owl-eye-iris" cx="75" cy="78" r="15"/>
-            <circle class="owl-eye-pupil" cx="75" cy="78" r="8"/>
-            <circle cx="125" cy="78" r="24" stroke="white" stroke-width="2.5"/>
-            <circle class="owl-eye-iris" cx="125" cy="78" r="15"/>
-            <circle class="owl-eye-pupil" cx="125" cy="78" r="8"/>
-            <path d="M94 98 Q100 90 106 98 L100 110 Z" stroke="white" stroke-width="2" fill="none"/>
-        </svg>
-        <div class="loader-title">Night Vision For Your Branch</div>
-    </div>
-
     <!-- Dashboard -->
     <div class="dashboard" id="dashboard">
     <div class="dashboard-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
             <div>
-                <h1>Omni Journey</h1>
-                <div class="subtitle">Journey Analysis & Channel Performance</div>
-                <div class="metadata" id="dataPeriod">Data Period: December 2024 | Updated: January 2025</div>
+                <div class="metadata" id="dataPeriod">Data Period: December 2025 | Omni Financial</div>
             </div>
         </div>
     </div>
@@ -557,6 +428,7 @@
         <!-- Top 20 Channels Chart -->
         <div class="chart-section">
             <div class="chart-title">Top 20 Channels by Application Volume</div>
+            <div style="color: var(--muted); font-size: 13px; margin-top: -12px; margin-bottom: 16px;">Applications where prospect had 1 or more clicks from that channel prior to completion</div>
             <div class="chart-with-icons">
                 <div id="channelIcons" class="channel-icons-column"></div>
                 <div id="channelChart" class="chart-container"></div>
@@ -590,41 +462,6 @@
     </div> <!-- End Dashboard -->
 
     <script>
-        // Auth
-        const AUTHORIZED_DOMAIN = 'alpharank.io';
-        let currentUser = null;
-
-        function handleCredentialResponse(response) {
-            const payload = JSON.parse(atob(response.credential.split('.')[1]));
-            if (payload.email.endsWith('@' + AUTHORIZED_DOMAIN)) {
-                currentUser = payload;
-                document.getElementById('loginOverlay').classList.add('hidden');
-
-                // Show loader animation
-                const loader = document.getElementById('loaderScreen');
-                loader.classList.remove('hidden');
-
-                // Start loading data in background
-                loadData();
-
-                // After animation completes, fade out loader and show dashboard
-                setTimeout(() => {
-                    document.querySelector('.loader-owl').classList.add('complete');
-                }, 2000);
-
-                setTimeout(() => {
-                    loader.classList.add('fade-out');
-                    document.getElementById('dashboard').style.display = 'block';
-                }, 3500);
-
-                setTimeout(() => {
-                    loader.classList.add('hidden');
-                }, 4000);
-            } else {
-                document.getElementById('errorMsg').style.display = 'block';
-            }
-        }
-
         // Global state
         let allData = [];
         let activeFilter = null;
@@ -1115,7 +952,8 @@
             renderDashboard();
         }
 
-        // No auto-load - wait for authentication
+        // Auto-load data on page load
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
