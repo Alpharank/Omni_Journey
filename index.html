@@ -738,8 +738,9 @@
         function renderChannelChart() {
             // Count applications per channel (each app counted once per unique channel in journey)
             const channelCounts = {};
+            const data = getFilteredData();
 
-            allData.forEach(row => {
+            data.forEach(row => {
                 const channels = new Set();
                 if (row.top && row.top.trim()) channels.add(row.top.trim());
                 if (row.middle) {
