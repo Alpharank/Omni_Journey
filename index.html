@@ -439,7 +439,6 @@
         <div class="table-section">
             <div class="table-header">
                 <div class="table-title">Journey Details <span id="journeyCount" style="font-weight: 400; color: var(--muted);"></span></div>
-                <div id="channelLegend" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);"></div>
             </div>
             <div class="table-container">
                 <table>
@@ -690,29 +689,6 @@
             updateKPIs();
             renderChannelChart();
             renderTable();
-            renderLegend();
-        }
-
-        function renderLegend() {
-            // Get unique channels from data
-            const channels = new Set();
-            allData.forEach(row => {
-                if (row.top) channels.add(row.top);
-                if (row.middle) {
-                    row.middle.split('>').map(c => c.trim()).filter(c => c).forEach(c => channels.add(c));
-                }
-                if (row.bottom) channels.add(row.bottom);
-            });
-
-            const legendContainer = document.getElementById('channelLegend');
-            legendContainer.innerHTML = '<span style="font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 8px;">Channel Legend:</span>';
-
-            Array.from(channels).sort().forEach(channel => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text);';
-                item.innerHTML = `<div style="width: 20px; height: 20px;">${getChannelIcon(channel)}</div><span>${channel}</span>`;
-                legendContainer.appendChild(item);
-            });
         }
 
         function updateKPIs() {
@@ -760,16 +736,16 @@
         }
 
         function renderChannelChart() {
-            // Count applications per channel
+            // Count applications per channel (each app counted once per unique channel in journey)
             const channelCounts = {};
 
             allData.forEach(row => {
-                const channels = [];
-                if (row.top && row.top.trim()) channels.push(row.top.trim());
+                const channels = new Set();
+                if (row.top && row.top.trim()) channels.add(row.top.trim());
                 if (row.middle) {
-                    channels.push(...row.middle.split('>').map(c => c.trim()).filter(c => c));
+                    row.middle.split('>').map(c => c.trim()).filter(c => c).forEach(c => channels.add(c));
                 }
-                if (row.bottom && row.bottom.trim()) channels.push(row.bottom.trim());
+                if (row.bottom && row.bottom.trim()) channels.add(row.bottom.trim());
 
                 channels.forEach(channel => {
                     if (channel) {
